@@ -1,0 +1,36 @@
+# Precedence policy for the deterministic resolver. Editable at runtime through
+# PUT /v1/policy/precedence (the Policy screen). Rules run in `order`; the first rule that
+# makes the remaining evidence consistent decides, and every evaluated rule is logged.
+version: 1
+order: [R0, R1, R2, R3, R4, R5]
+
+# Authority tiers: lower number = more authoritative.
+tiers:
+  regulatory: 1
+  board_policy: 1
+  policy: 2
+  circular: 2
+  procedure: 2
+  amendment: 2
+  addendum: 2
+  product_terms: 3
+  schedule: 3
+  notice: 3
+  faq: 4
+  help_article: 4
+  memo: 5
+  email: 5
+default_tier: 4
+
+# Rule strength feeds the confidence score (R1 1.0, R2/R3 0.75, R4 0.55 per the spec).
+strength: {Q: 1.0, R0: 1.0, R1: 1.0, R2: 0.75, R3: 0.75, R4: 0.55, R5: 0.0}
+
+rules:
+  R2:
+    # A lower-tier source NEWER than every higher-tier source it contradicts may be an
+    # unofficial update: escalate to UNRESOLVED instead of silently discarding it.
+    escalate_if_lower_tier_newer: true
+  R4:
+    # false: recency only decides between versions of the same series and tier.
+    # true:  recency decides across series and tiers ("recency beats authority").
+    cross_series: false

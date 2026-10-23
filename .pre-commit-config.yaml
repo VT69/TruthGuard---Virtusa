@@ -1,0 +1,24 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: backend/.venv/bin/ruff check --fix --config backend/pyproject.toml
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: backend/.venv/bin/ruff format --config backend/pyproject.toml
+        language: system
+        types: [python]
+      - id: mypy
+        name: mypy --strict
+        entry: bash -c "cd backend && .venv/bin/mypy"
+        language: system
+        pass_filenames: false
+        files: ^backend/src/
+      - id: no-secrets
+        name: no .env committed
+        entry: bash -c 'git diff --cached --name-only | grep -E "(^|/)\.env$" && exit 1 || exit 0'
+        language: system
+        pass_filenames: false

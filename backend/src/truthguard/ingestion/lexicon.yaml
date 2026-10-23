@@ -1,0 +1,241 @@
+# Entity and attribute registry for the Northwind Bank domain.
+#
+# This is domain configuration, not code: a client deployment edits this file (or lets
+# the LLM extractor propose additions) to cover its own products. The rule-based
+# extractor and the offline planner both read it; the LLM extractor receives it as the
+# allowed vocabulary so every assertion lands on a canonical slot.
+#
+# Synonyms are case-insensitive regexes. A leading "~" marks a WEAK synonym: it only
+# counts when no strong synonym of another attribute matches the same text.
+
+subjects:
+  platinum_credit_card:
+    label: Platinum Credit Card
+    phrase: the Platinum Credit Card
+    topic: card_fees
+    aliases: ['platinum credit cards?', 'platinum cards?', 'platinum cardholders?', 'platinum']
+  gold_credit_card:
+    label: Gold Credit Card
+    phrase: the Gold Credit Card
+    topic: card_fees
+    aliases: ['gold credit cards?', 'gold cards?']
+  classic_credit_card:
+    label: Classic Credit Card
+    phrase: the Classic Credit Card
+    topic: card_fees
+    aliases: ['classic credit cards?', 'classic cards?']
+  credit_cards:
+    label: All credit cards
+    phrase: all credit cards
+    topic: card_fees
+    generic: true
+    aliases: ['all credit cards', 'any northwind credit card', 'credit cards?']
+  debit_card:
+    label: RuPay Debit Card
+    phrase: the RuPay Debit Card
+    topic: card_fees
+    aliases: ['rupay debit cards?', 'debit cards?']
+  personal_loan:
+    label: Personal Loan
+    phrase: a personal loan
+    topic: personal_loan
+    aliases: ['personal loans?']
+  kyc:
+    label: KYC (Know Your Customer)
+    phrase: KYC
+    topic: kyc
+    aliases: ['re-?kyc', 'kyc', 'know your customer']
+  savings_account:
+    label: Savings Account
+    phrase: a savings account
+    topic: accounts
+    aliases: ['savings accounts?']
+  card_disputes:
+    label: Card disputes
+    phrase: card disputes
+    topic: fraud_disputes
+    aliases: ['card disputes?', 'disputed transactions?', 'unauthori[sz]ed transactions?', 'dispute resolution', 'chargebacks?']
+  fixed_deposit:
+    label: Fixed Deposit
+    phrase: a fixed deposit
+    topic: fixed_deposit
+    aliases: ['fixed deposits?', '\bfds?\b', 'term deposits?']
+
+attributes:
+  late_payment_fee:
+    label: Late payment fee
+    kind: money
+    default_subject: null
+    subjects: [platinum_credit_card, gold_credit_card, classic_credit_card]
+    synonyms: ['late payment fee', 'late fee', 'late payment charge', 'minimum amount due.{0,60}not paid',
+               'pay\w*\b.{0,40}\blate\b', 'payment is late']
+  annual_fee:
+    label: Annual fee
+    kind: money
+    subjects: [platinum_credit_card, gold_credit_card, classic_credit_card, debit_card]
+    synonyms: ['annual (membership )?fee', 'yearly (membership )?fee', 'yearly .{0,25}fee', 'annual .{0,25}fee']
+  forex_markup:
+    label: Foreign currency mark-up
+    kind: percent
+    subjects: [platinum_credit_card]
+    synonyms: ['foreign currency mark-?up', 'forex mark-?up', 'mark-?up', '~foreign currency']
+  cash_advance_fee:
+    label: Cash advance fee
+    kind: percent
+    default_subject: credit_cards
+    subjects: [credit_cards]
+    synonyms: ['cash advance fee', 'cash advance', 'withdraw\w* cash', 'cash withdrawals?']
+  reward_rate:
+    label: Reward points per ₹100
+    kind: count
+    count_unit: 'reward points?|points'
+    unit: points per ₹100
+    subjects: [platinum_credit_card]
+    synonyms: ['reward points?', 'reward rate']
+  lounge_visits:
+    label: Complimentary lounge visits per year
+    kind: count
+    count_unit: '(?:complimentary )?(?:domestic )?lounge visits?'
+    unit: visits per year
+    subjects: [platinum_credit_card]
+    synonyms: ['lounge visits?', 'lounge access']
+  replacement_fee:
+    label: Card replacement fee
+    kind: money
+    default_subject: debit_card
+    subjects: [debit_card]
+    synonyms: ['replacement fee', 'card replacement', 'replace\w* (a |the |my )?(lost )?(debit )?card']
+  min_monthly_income:
+    label: Minimum net monthly income
+    kind: money
+    default_subject: personal_loan
+    subjects: [personal_loan]
+    scopes: [salaried, self_employed]
+    synonyms: ['minimum (net )?monthly income', 'minimum income', 'net monthly income', 'monthly income']
+  min_age:
+    label: Minimum applicant age
+    kind: years
+    default_subject: personal_loan
+    subjects: [personal_loan]
+    synonyms: ['minimum age', 'how old']
+  max_tenure:
+    label: Maximum repayment tenure
+    kind: months
+    default_subject: personal_loan
+    subjects: [personal_loan]
+    scopes: [salaried, self_employed]
+    synonyms: ['maximum (repayment )?tenure', 'repayment tenure', 'how many months', '~tenure']
+  processing_fee:
+    label: Processing fee
+    kind: percent
+    default_subject: personal_loan
+    subjects: [personal_loan]
+    synonyms: ['processing fee', 'processing charge']
+  prepayment_charge:
+    label: Prepayment charge
+    kind: percent
+    default_subject: personal_loan
+    subjects: [personal_loan]
+    synonyms: ['prepayment charge', 'foreclosure charge', 'pre-?closure charge', 'prepay\w*']
+  kyc_refresh_period:
+    label: Periodic KYC updation frequency
+    kind: years
+    default_subject: kyc
+    subjects: [kyc]
+    scopes: [high_risk, medium_risk, low_risk]
+    synonyms: ['refresh period', 'how often', 'how frequently', 'frequency', 'updation frequency',
+               '~periodic updation', '~re-?kyc', '~update (their |the )?kyc']
+  video_kyc:
+    label: Video KYC for periodic updation
+    kind: modality
+    default_subject: kyc
+    subjects: [kyc]
+    synonyms: ['video kyc', 'v-cip', 'video-based customer identification']
+  closure_charge:
+    label: Account closure charge (within 12 months)
+    kind: money
+    default_subject: savings_account
+    subjects: [savings_account]
+    synonyms: ['(account )?closure charge', 'cost to close', 'clos\w+ .{0,40}\bwithin\b']
+  closure_processing_time:
+    label: Account closure processing time
+    kind: days
+    default_subject: savings_account
+    subjects: [savings_account]
+    synonyms: ['closure requests? (are|is) processed', 'process\w* .{0,40}closure', 'closure take',
+               'closure .{0,30}working days']
+  min_balance:
+    label: Minimum average balance
+    kind: money
+    default_subject: savings_account
+    subjects: [savings_account]
+    synonyms: ['minimum (average )?balance']
+  dispute_window:
+    label: Dispute reporting window
+    kind: days
+    default_subject: card_disputes
+    subjects: [card_disputes]
+    synonyms: ['report\w* (a )?disputed transactions?', 'dispute window', 'rais\w+ (a )?(card )?dispute',
+               'window for .{0,25}dispute', 'disputed transactions? (?:must |should )?be reported']
+  provisional_credit_time:
+    label: Provisional credit timeline
+    kind: days
+    default_subject: card_disputes
+    subjects: [card_disputes]
+    synonyms: ['provisional credit']
+  zero_liability_window:
+    label: Zero-liability reporting window
+    kind: days
+    default_subject: card_disputes
+    subjects: [card_disputes]
+    synonyms: ['zero liability']
+  fd_interest_rate:
+    label: Fixed deposit interest rate
+    kind: percent
+    default_subject: fixed_deposit
+    subjects: [fixed_deposit]
+    scopes: [tenor_1y, tenor_2y]
+    synonyms: ['interest rate', 'rate of interest', '\bfd rate', 'deposit rate', '~per annum', '~\bearns?\b']
+  senior_additional_rate:
+    label: Additional rate for senior citizens
+    kind: percent
+    default_subject: fixed_deposit
+    default_scope: senior_citizen
+    subjects: [fixed_deposit]
+    scopes: [senior_citizen]
+    synonyms: ['additional (interest )?rate', 'additional .{0,12}rate', 'additional interest', 'extra .{0,25}(earn|rate)', 'higher rate']
+  premature_penalty:
+    label: Premature withdrawal penalty
+    kind: percent
+    default_subject: fixed_deposit
+    subjects: [fixed_deposit]
+    scopes: [senior_citizen]
+    synonyms: ['premature withdrawal penalty', 'premature withdrawal', 'withdrawn prematurely',
+               'break .{0,25}early', '~penalty']
+
+scopes:
+  self_employed: {label: Self-employed applicants, patterns: ['self[- ]employed']}
+  salaried: {label: Salaried applicants, patterns: ['salaried']}
+  senior_citizen: {label: Senior citizens, patterns: ['senior citizens?']}
+  high_risk: {label: High-risk customers, patterns: ['high[- ]risk']}
+  medium_risk: {label: Medium-risk customers, patterns: ['medium[- ]risk']}
+  low_risk: {label: Low-risk customers, patterns: ['low[- ]risk']}
+  tenor_1y: {label: 1-year tenor, patterns: ['1[- ]year', 'one[- ]year', '12[- ]month']}
+  tenor_2y: {label: 2-year tenor, patterns: ['2[- ]year', 'two[- ]year', '24[- ]month']}
+
+# Words that, before card/loan/account/deposit, name a product we do NOT know about.
+# Used by the planner to abstain instead of mapping "Titanium card" onto "Platinum card".
+product_nouns: ['credit card', 'card', 'loan', 'account', 'deposit']
+non_product_modifiers: [my, the, a, an, your, any, this, that, same, lost, damaged, new, credit, all,
+                        every, each, per, of, on, for, with, his, her, their, our, northwind, bank, own,
+                        existing, closed, card, to, is, what, which, close, apply, deposit, replace]
+
+# Topic owners: who should settle an unresolved conflict.
+topic_owners:
+  card_fees: Cards Policy Committee
+  personal_loan: Retail Lending Committee
+  kyc: Chief Compliance Officer
+  accounts: Head of Retail Banking
+  fraud_disputes: Risk Committee
+  fixed_deposit: Treasury (ALCO)
+  general: Knowledge Base Owner

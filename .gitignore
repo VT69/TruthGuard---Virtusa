@@ -1,0 +1,25 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+*.db
+backend/.cache/
+eval/.llm_cache/
+# node
+node_modules/
+.next/
+frontend/playwright-report/
+frontend/test-results/
+frontend/*.tsbuildinfo
+next-env.d.ts
+# env
+.env
+.env.local
+# os
+.DS_Store

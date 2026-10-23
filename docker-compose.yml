@@ -1,0 +1,51 @@
+# `docker compose up` (or `make up`): Postgres + pgvector, the API, and the UI.
+# Copy .env.example to .env to add LLM keys; without keys everything runs offline.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: truthguard
+      POSTGRES_PASSWORD: truthguard
+      POSTGRES_DB: truthguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U truthguard"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://truthguard:truthguard@db:5432/truthguard
+      VECTOR_BACKEND: pgvector
+      DEMO_MODE: ${DEMO_MODE:-false}
+      TODAY_OVERRIDE: ${TODAY_OVERRIDE:-}
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
